@@ -1,0 +1,3246 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "name": "data.ipynb",
+      "provenance": [],
+      "collapsed_sections": [],
+      "authorship_tag": "ABX9TyNOqcItqZh0AjEtjEoNwVpA",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/DongIn-Kim/StockResearch/blob/main/Stock%20Research%202021%20Summer%20Workshop\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "qIhT6xOq2VBz"
+      },
+      "source": [
+        "import pandas as pd\n",
+        "import numpy as np\n",
+        "import pandas_datareader.data as web\n",
+        "import datetime\n",
+        "from pandas_datareader import data\n",
+        "# https://pydata.github.io/pandas-datareader/remote_data.html#fred (fred 코딩)\n",
+        "# https://fred.stlouisfed.org/ (fred 사이트)\n",
+        "# https://itkmj.blogspot.com/2020/04/yahoo-finance.html (yahoo finance 코딩)\n",
+        "# https://finance.yahoo.com/ (yahoo finance 사이트)\n",
+        "# S&P500, VT, 금, 미국3개월, 3년, 10년물, aaa 우량회사채, 엔화, 위안화, 유로화, REITs 비트코인, 이더리움, TIP(물가연동채)\n",
+        "# 비트코인은 14/9/16, 이더리움은 15/8/6, VT는 08/6/26 부터 데이터가 시작함"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "IvI5IB_22lSF"
+      },
+      "source": [
+        "#start와 end에 데이터 기간을 정해준다\n",
+        "start = datetime.datetime(2009, 7, 1)\n",
+        "end = datetime.datetime(2021, 4, 1)\n",
+        "snp = data.DataReader('^GSPC','yahoo', start, end)\n",
+        "vt = data.DataReader('VT','yahoo', start, end)\n",
+        "#앞에 gold는 바꿔도 됨. 뒤에 복잡한 코드는 fred 주소에서 따옴. ex) https://fred.stlouisfed.org/series/GOLDPMGBD228NLBM라면 series/뒤에있는거 긁으면 됨\n",
+        "gold = web.DataReader(['GOLDPMGBD228NLBM'], 'fred', start, end)\n",
+        "mo3 = web.DataReader(['DGS3MO'], 'fred', start, end)\n",
+        "yr3 = web.DataReader(['DGS3'], 'fred', start, end)\n",
+        "yr10 = web.DataReader(['DGS10'], 'fred', start, end)\n",
+        "aaa = web.DataReader(['BAMLC0A1CAAAEY'], 'fred', start, end)\n",
+        "dollar = web.DataReader(['DTWEXBGS'], 'fred', start, end)\n",
+        "yen = web.DataReader(['DEXJPUS'], 'fred', start, end)\n",
+        "chf = web.DataReader(['DEXSZUS'], 'fred', start, end)\n",
+        "rmb = web.DataReader(['DEXCHUS'], 'fred', start, end)\n",
+        "eur = web.DataReader(['DEXUSEU'], 'fred', start, end)\n",
+        "reits = data.DataReader('VNQ','yahoo', start, end)\n",
+        "btc = data.DataReader('BTC-USD','yahoo', start, end)\n",
+        "eth = data.DataReader('ETH-USD','yahoo', start, end)\n",
+        "tip = data.DataReader('TIP','yahoo', start, end)"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "M_fiQSG_8t5R",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 450
+        },
+        "outputId": "6a213cf7-307d-44fd-dc4c-26439522946c"
+      },
+      "source": [
+        "snp.rename({'Close': 'snp'}, axis=1, inplace=True)\n",
+        "snp['snpl'] = np.log(snp['snp'])\n",
+        "snp['snpg'] = snp['snpl'].diff()\n",
+        "del snp['snp']\n",
+        "del snp['snpl']\n",
+        "del snp['High']\n",
+        "del snp['Low']\n",
+        "del snp['Open']\n",
+        "del snp['Volume']\n",
+        "del snp['Adj Close']\n",
+        "snp.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>snpg</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>Date</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2009-07-02</th>\n",
+              "      <td>-0.029578</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-06</th>\n",
+              "      <td>0.002562</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-07</th>\n",
+              "      <td>-0.019880</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-08</th>\n",
+              "      <td>-0.001670</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-09</th>\n",
+              "      <td>0.003541</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-26</th>\n",
+              "      <td>0.016494</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>-0.000868</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>-0.003163</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>0.003616</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>0.011756</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>2958 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                snpg\n",
+              "Date                \n",
+              "2009-07-02 -0.029578\n",
+              "2009-07-06  0.002562\n",
+              "2009-07-07 -0.019880\n",
+              "2009-07-08 -0.001670\n",
+              "2009-07-09  0.003541\n",
+              "...              ...\n",
+              "2021-03-26  0.016494\n",
+              "2021-03-29 -0.000868\n",
+              "2021-03-30 -0.003163\n",
+              "2021-03-31  0.003616\n",
+              "2021-04-01  0.011756\n",
+              "\n",
+              "[2958 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 5
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "v81VxhaLD5We",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 450
+        },
+        "outputId": "b217a5fb-5705-4b24-8af1-1eef6fdb0458"
+      },
+      "source": [
+        "vt.rename({'Close': 'vt'}, axis=1, inplace=True)\n",
+        "vt['vtl'] = np.log(vt['vt'])\n",
+        "vt['vtg'] = vt['vtl'].diff()\n",
+        "del vt['vt']\n",
+        "del vt['vtl']\n",
+        "del vt['High']\n",
+        "del vt['Low']\n",
+        "del vt['Open']\n",
+        "del vt['Volume']\n",
+        "del vt['Adj Close']\n",
+        "vt.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>vtg</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>Date</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2009-07-02</th>\n",
+              "      <td>-0.029980</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-06</th>\n",
+              "      <td>-0.001437</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-07</th>\n",
+              "      <td>-0.020332</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-08</th>\n",
+              "      <td>-0.002644</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-09</th>\n",
+              "      <td>0.008787</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-26</th>\n",
+              "      <td>0.015506</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>-0.003802</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>-0.000206</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>0.001955</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>0.013071</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>2958 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                 vtg\n",
+              "Date                \n",
+              "2009-07-02 -0.029980\n",
+              "2009-07-06 -0.001437\n",
+              "2009-07-07 -0.020332\n",
+              "2009-07-08 -0.002644\n",
+              "2009-07-09  0.008787\n",
+              "...              ...\n",
+              "2021-03-26  0.015506\n",
+              "2021-03-29 -0.003802\n",
+              "2021-03-30 -0.000206\n",
+              "2021-03-31  0.001955\n",
+              "2021-04-01  0.013071\n",
+              "\n",
+              "[2958 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 6
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "scS9Ly9i2rqG",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 450
+        },
+        "outputId": "a930796c-645b-49cd-b9d2-d4bf176258b2"
+      },
+      "source": [
+        "#column 이름 정리. 데이터 받을 때 코드명으로 지정되어있음. 뒤에 gold를 자산군 이름에 맞게 바꾸면 됨.\n",
+        "gold.rename({'GOLDPMGBD228NLBM': 'gold'}, axis=1, inplace=True)\n",
+        "#log를 취해준다. 로그차분하는 이유는 금융시계열 데이터의 안정성을 확보하기 위해서이다.\n",
+        "gold['goldl'] = np.log(gold['gold'])\n",
+        "#차분한다\n",
+        "gold['goldg'] = gold['goldl'].diff()\n",
+        "#로그차분하고 남은 데이터행을 지운다\n",
+        "del gold['gold']\n",
+        "del gold['goldl']\n",
+        "#차분하면 맨 위에 행이 nan으로 남게되는데 이를 지운다\n",
+        "gold.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>goldg</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>DATE</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2009-07-02</th>\n",
+              "      <td>-0.009370</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-03</th>\n",
+              "      <td>0.003222</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-06</th>\n",
+              "      <td>-0.008616</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-07</th>\n",
+              "      <td>-0.000541</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-08</th>\n",
+              "      <td>-0.006515</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-26</th>\n",
+              "      <td>-0.003171</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>-0.015039</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>-0.012980</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>0.004207</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>0.020486</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>2873 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "               goldg\n",
+              "DATE                \n",
+              "2009-07-02 -0.009370\n",
+              "2009-07-03  0.003222\n",
+              "2009-07-06 -0.008616\n",
+              "2009-07-07 -0.000541\n",
+              "2009-07-08 -0.006515\n",
+              "...              ...\n",
+              "2021-03-26 -0.003171\n",
+              "2021-03-29 -0.015039\n",
+              "2021-03-30 -0.012980\n",
+              "2021-03-31  0.004207\n",
+              "2021-04-01  0.020486\n",
+              "\n",
+              "[2873 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 7
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "1jz4iEmC0LZb",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 518
+        },
+        "outputId": "af6aafd8-0d92-45c1-be18-e2e0d66e5444"
+      },
+      "source": [
+        "mo3.rename({'DGS3MO': 'mo3'}, axis=1, inplace=True)\n",
+        "mo3['mo3l'] = np.log(mo3['mo3'])\n",
+        "mo3['mo3g'] = mo3['mo3l'].diff()\n",
+        "del mo3['mo3']\n",
+        "del mo3['mo3l']\n",
+        "mo3.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "/usr/local/lib/python3.7/dist-packages/pandas/core/series.py:726: RuntimeWarning: divide by zero encountered in log\n",
+            "  result = getattr(ufunc, method)(*inputs, **kwargs)\n",
+            "/usr/local/lib/python3.7/dist-packages/pandas/core/algorithms.py:2001: RuntimeWarning: invalid value encountered in subtract\n",
+            "  out_arr[res_indexer] = arr[res_indexer] - arr[lag_indexer]\n"
+          ],
+          "name": "stderr"
+        },
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>mo3g</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>DATE</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2009-07-02</th>\n",
+              "      <td>0.000000</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-07</th>\n",
+              "      <td>0.000000</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-08</th>\n",
+              "      <td>-0.054067</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-09</th>\n",
+              "      <td>0.054067</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-10</th>\n",
+              "      <td>-0.054067</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-26</th>\n",
+              "      <td>0.000000</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>0.405465</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>-0.405465</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>0.405465</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>-0.405465</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>2806 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                mo3g\n",
+              "DATE                \n",
+              "2009-07-02  0.000000\n",
+              "2009-07-07  0.000000\n",
+              "2009-07-08 -0.054067\n",
+              "2009-07-09  0.054067\n",
+              "2009-07-10 -0.054067\n",
+              "...              ...\n",
+              "2021-03-26  0.000000\n",
+              "2021-03-29  0.405465\n",
+              "2021-03-30 -0.405465\n",
+              "2021-03-31  0.405465\n",
+              "2021-04-01 -0.405465\n",
+              "\n",
+              "[2806 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 8
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "o-SsfS610QeS",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 450
+        },
+        "outputId": "b2a2c3c6-8680-4ca1-fdfb-59445c406930"
+      },
+      "source": [
+        "yr3.rename({'DGS3': 'yr3'}, axis=1, inplace=True)\n",
+        "yr3['yr3l'] = np.log(yr3['yr3'])\n",
+        "yr3['yr3g'] = yr3['yr3l'].diff()\n",
+        "del yr3['yr3']\n",
+        "del yr3['yr3l']\n",
+        "yr3.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>yr3g</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>DATE</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2009-07-02</th>\n",
+              "      <td>-0.032365</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-07</th>\n",
+              "      <td>0.026668</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-08</th>\n",
+              "      <td>-0.068053</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-09</th>\n",
+              "      <td>0.027780</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-10</th>\n",
+              "      <td>-0.041964</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-26</th>\n",
+              "      <td>0.032790</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>0.031749</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>0.030772</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>0.058841</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>0.000000</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>2812 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                yr3g\n",
+              "DATE                \n",
+              "2009-07-02 -0.032365\n",
+              "2009-07-07  0.026668\n",
+              "2009-07-08 -0.068053\n",
+              "2009-07-09  0.027780\n",
+              "2009-07-10 -0.041964\n",
+              "...              ...\n",
+              "2021-03-26  0.032790\n",
+              "2021-03-29  0.031749\n",
+              "2021-03-30  0.030772\n",
+              "2021-03-31  0.058841\n",
+              "2021-04-01  0.000000\n",
+              "\n",
+              "[2812 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 9
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "WFokScnQ0hIV",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 450
+        },
+        "outputId": "26accea2-c84f-49ba-98c8-ce8b9f44e3ce"
+      },
+      "source": [
+        "yr10.rename({'DGS10': 'yr10'}, axis=1, inplace=True)\n",
+        "yr10['yr10l'] = np.log(yr10['yr10'])\n",
+        "yr10['yr10g'] = yr10['yr10l'].diff()\n",
+        "del yr10['yr10']\n",
+        "del yr10['yr10l']\n",
+        "yr10.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>yr10g</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>DATE</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2009-07-02</th>\n",
+              "      <td>-0.011332</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-07</th>\n",
+              "      <td>-0.014306</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-08</th>\n",
+              "      <td>-0.041182</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-09</th>\n",
+              "      <td>0.032499</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-10</th>\n",
+              "      <td>-0.035507</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-26</th>\n",
+              "      <td>0.024244</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>0.035298</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>0.000000</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>0.005764</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>-0.029157</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>2812 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "               yr10g\n",
+              "DATE                \n",
+              "2009-07-02 -0.011332\n",
+              "2009-07-07 -0.014306\n",
+              "2009-07-08 -0.041182\n",
+              "2009-07-09  0.032499\n",
+              "2009-07-10 -0.035507\n",
+              "...              ...\n",
+              "2021-03-26  0.024244\n",
+              "2021-03-29  0.035298\n",
+              "2021-03-30  0.000000\n",
+              "2021-03-31  0.005764\n",
+              "2021-04-01 -0.029157\n",
+              "\n",
+              "[2812 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 10
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "yjqmvLyLSo76",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 450
+        },
+        "outputId": "495d9b00-27e2-4fd5-ccf5-e40d0ca92ee8"
+      },
+      "source": [
+        "aaa.rename({'BAMLC0A1CAAAEY': 'aaa'}, axis=1, inplace=True)\n",
+        "aaa['aaa'] = 1 / aaa['aaa']\n",
+        "aaa['aaal'] = np.log(aaa['aaa'])\n",
+        "aaa['aaag'] = aaa['aaal'].diff()\n",
+        "del aaa['aaa']\n",
+        "del aaa['aaal']\n",
+        "aaa.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>aaag</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>DATE</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2009-07-02</th>\n",
+              "      <td>0.055350</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-03</th>\n",
+              "      <td>0.000000</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-06</th>\n",
+              "      <td>-0.115069</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-07</th>\n",
+              "      <td>0.019513</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-08</th>\n",
+              "      <td>0.035091</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-26</th>\n",
+              "      <td>-0.009524</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>-0.014118</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>0.009390</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>0.004728</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>0.028848</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>3030 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                aaag\n",
+              "DATE                \n",
+              "2009-07-02  0.055350\n",
+              "2009-07-03  0.000000\n",
+              "2009-07-06 -0.115069\n",
+              "2009-07-07  0.019513\n",
+              "2009-07-08  0.035091\n",
+              "...              ...\n",
+              "2021-03-26 -0.009524\n",
+              "2021-03-29 -0.014118\n",
+              "2021-03-30  0.009390\n",
+              "2021-03-31  0.004728\n",
+              "2021-04-01  0.028848\n",
+              "\n",
+              "[3030 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 11
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "kDH8DhwKSL2U",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 450
+        },
+        "outputId": "3ba3e348-dc38-4c58-ba34-3689beac4de3"
+      },
+      "source": [
+        "dollar.rename({'DTWEXBGS': 'dollar'}, axis=1, inplace=True)\n",
+        "dollar['dollarl'] = np.log(dollar['dollar'])\n",
+        "dollar['dollarg'] = dollar['dollarl'].diff()\n",
+        "del dollar['dollar']\n",
+        "del dollar['dollarl']\n",
+        "dollar.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>dollarg</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>DATE</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2009-07-02</th>\n",
+              "      <td>0.006912</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-07</th>\n",
+              "      <td>0.000152</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-08</th>\n",
+              "      <td>0.004010</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-09</th>\n",
+              "      <td>-0.004116</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-10</th>\n",
+              "      <td>0.004750</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-26</th>\n",
+              "      <td>-0.002275</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>0.001694</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>0.002452</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>-0.003306</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>-0.000800</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>2781 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "             dollarg\n",
+              "DATE                \n",
+              "2009-07-02  0.006912\n",
+              "2009-07-07  0.000152\n",
+              "2009-07-08  0.004010\n",
+              "2009-07-09 -0.004116\n",
+              "2009-07-10  0.004750\n",
+              "...              ...\n",
+              "2021-03-26 -0.002275\n",
+              "2021-03-29  0.001694\n",
+              "2021-03-30  0.002452\n",
+              "2021-03-31 -0.003306\n",
+              "2021-04-01 -0.000800\n",
+              "\n",
+              "[2781 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 12
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "uhafsNyRSdNk",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 450
+        },
+        "outputId": "2b6d53ea-4d57-4e0a-d01c-4feeb50aad91"
+      },
+      "source": [
+        "yen.rename({'DEXJPUS': 'yen'}, axis=1, inplace=True)\n",
+        "yen['yen'] = 1 / yen['yen']\n",
+        "yen['yenl'] = np.log(yen['yen'])\n",
+        "yen['yeng'] = yen['yenl'].diff()\n",
+        "del yen['yen']\n",
+        "del yen['yenl']\n",
+        "yen.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>yeng</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>DATE</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2009-07-02</th>\n",
+              "      <td>0.005304</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-03</th>\n",
+              "      <td>-0.000521</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-06</th>\n",
+              "      <td>0.009950</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-07</th>\n",
+              "      <td>-0.001157</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-08</th>\n",
+              "      <td>0.023510</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-26</th>\n",
+              "      <td>-0.003841</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>-0.001642</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>-0.004183</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>-0.003804</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>0.000000</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>2816 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                yeng\n",
+              "DATE                \n",
+              "2009-07-02  0.005304\n",
+              "2009-07-03 -0.000521\n",
+              "2009-07-06  0.009950\n",
+              "2009-07-07 -0.001157\n",
+              "2009-07-08  0.023510\n",
+              "...              ...\n",
+              "2021-03-26 -0.003841\n",
+              "2021-03-29 -0.001642\n",
+              "2021-03-30 -0.004183\n",
+              "2021-03-31 -0.003804\n",
+              "2021-04-01  0.000000\n",
+              "\n",
+              "[2816 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 13
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 450
+        },
+        "id": "SD4IDGoGA4g7",
+        "outputId": "a683f7d0-9991-442c-97bd-dd565bd4c40e"
+      },
+      "source": [
+        "chf.rename({'DEXSZUS': 'chf'}, axis=1, inplace=True)\n",
+        "chf['chf'] = 1 / chf['chf']\n",
+        "chf['chfl'] = np.log(chf['chf'])\n",
+        "chf['chfg'] = chf['chfl'].diff()\n",
+        "del chf['chf']\n",
+        "del chf['chfl']\n",
+        "chf.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>chfg</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>DATE</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2009-07-02</th>\n",
+              "      <td>-0.010763</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-03</th>\n",
+              "      <td>-0.002489</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-06</th>\n",
+              "      <td>-0.001288</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-07</th>\n",
+              "      <td>0.001748</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-08</th>\n",
+              "      <td>-0.005969</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-26</th>\n",
+              "      <td>-0.000532</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>0.001811</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>-0.004892</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>0.000955</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>0.000956</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>2816 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                chfg\n",
+              "DATE                \n",
+              "2009-07-02 -0.010763\n",
+              "2009-07-03 -0.002489\n",
+              "2009-07-06 -0.001288\n",
+              "2009-07-07  0.001748\n",
+              "2009-07-08 -0.005969\n",
+              "...              ...\n",
+              "2021-03-26 -0.000532\n",
+              "2021-03-29  0.001811\n",
+              "2021-03-30 -0.004892\n",
+              "2021-03-31  0.000955\n",
+              "2021-04-01  0.000956\n",
+              "\n",
+              "[2816 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 14
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "5JE0Ojc0SzOz",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 450
+        },
+        "outputId": "17c9145f-de4a-45c2-9a56-2f4f09db6b7c"
+      },
+      "source": [
+        "rmb.rename({'DEXCHUS': 'rmb'}, axis=1, inplace=True)\n",
+        "rmb['rmb'] = 1 / rmb['rmb']\n",
+        "rmb['rmbl'] = np.log(rmb['rmb'])\n",
+        "rmb['rmbg'] = rmb['rmbl'].diff()\n",
+        "del rmb['rmb']\n",
+        "del rmb['rmbl']\n",
+        "rmb.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>rmbg</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>DATE</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2009-07-02</th>\n",
+              "      <td>0.000278</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-03</th>\n",
+              "      <td>-0.000117</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-06</th>\n",
+              "      <td>-0.000322</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-07</th>\n",
+              "      <td>0.000234</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-08</th>\n",
+              "      <td>0.000044</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-26</th>\n",
+              "      <td>0.000611</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>-0.004332</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>-0.000304</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>0.003018</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>-0.001937</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>2816 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                rmbg\n",
+              "DATE                \n",
+              "2009-07-02  0.000278\n",
+              "2009-07-03 -0.000117\n",
+              "2009-07-06 -0.000322\n",
+              "2009-07-07  0.000234\n",
+              "2009-07-08  0.000044\n",
+              "...              ...\n",
+              "2021-03-26  0.000611\n",
+              "2021-03-29 -0.004332\n",
+              "2021-03-30 -0.000304\n",
+              "2021-03-31  0.003018\n",
+              "2021-04-01 -0.001937\n",
+              "\n",
+              "[2816 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 15
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "BW3f8J51RfwK",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 450
+        },
+        "outputId": "966216a5-c840-4a85-c0d7-65225f5345f8"
+      },
+      "source": [
+        "eur.rename({'DEXUSEU': 'eur'}, axis=1, inplace=True)\n",
+        "eur['eurl'] = np.log(eur['eur'])\n",
+        "eur['eurg'] = eur['eurl'].diff()\n",
+        "del eur['eur']\n",
+        "del eur['eurl']\n",
+        "eur.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>eurg</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>DATE</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2009-07-02</th>\n",
+              "      <td>-0.011913</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-03</th>\n",
+              "      <td>-0.001928</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-06</th>\n",
+              "      <td>-0.003795</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-07</th>\n",
+              "      <td>0.001935</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-08</th>\n",
+              "      <td>-0.008125</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-26</th>\n",
+              "      <td>0.001782</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>-0.001612</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>-0.004680</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>0.001619</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>0.002467</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>2816 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                eurg\n",
+              "DATE                \n",
+              "2009-07-02 -0.011913\n",
+              "2009-07-03 -0.001928\n",
+              "2009-07-06 -0.003795\n",
+              "2009-07-07  0.001935\n",
+              "2009-07-08 -0.008125\n",
+              "...              ...\n",
+              "2021-03-26  0.001782\n",
+              "2021-03-29 -0.001612\n",
+              "2021-03-30 -0.004680\n",
+              "2021-03-31  0.001619\n",
+              "2021-04-01  0.002467\n",
+              "\n",
+              "[2816 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 16
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "EClMNAmZC5jb",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 450
+        },
+        "outputId": "8a4445c7-5663-40a2-fc22-e35cffc2b8c3"
+      },
+      "source": [
+        "reits.rename({'Close': 'reits'}, axis=1, inplace=True)\n",
+        "reits['reitsl'] = np.log(reits['reits'])\n",
+        "reits['reitsg'] = reits['reitsl'].diff()\n",
+        "del reits['reits']\n",
+        "del reits['reitsl']\n",
+        "del reits['High']\n",
+        "del reits['Low']\n",
+        "del reits['Open']\n",
+        "del reits['Volume']\n",
+        "del reits['Adj Close']\n",
+        "reits.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>reitsg</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>Date</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2009-07-02</th>\n",
+              "      <td>-0.054384</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-06</th>\n",
+              "      <td>0.024791</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-07</th>\n",
+              "      <td>-0.039626</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-08</th>\n",
+              "      <td>-0.009556</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-09</th>\n",
+              "      <td>-0.019042</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-26</th>\n",
+              "      <td>0.021338</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>-0.005833</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>0.001299</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>-0.006078</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>0.018017</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>2958 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "              reitsg\n",
+              "Date                \n",
+              "2009-07-02 -0.054384\n",
+              "2009-07-06  0.024791\n",
+              "2009-07-07 -0.039626\n",
+              "2009-07-08 -0.009556\n",
+              "2009-07-09 -0.019042\n",
+              "...              ...\n",
+              "2021-03-26  0.021338\n",
+              "2021-03-29 -0.005833\n",
+              "2021-03-30  0.001299\n",
+              "2021-03-31 -0.006078\n",
+              "2021-04-01  0.018017\n",
+              "\n",
+              "[2958 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 17
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "CfFW-bSs7pSs",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 450
+        },
+        "outputId": "9ddd3d88-4f49-458c-9794-4fb3d1a90bc8"
+      },
+      "source": [
+        "btc.rename({'Close': 'btc'}, axis=1, inplace=True)\n",
+        "btc['btcl'] = np.log(btc['btc'])\n",
+        "btc['btcg'] = btc['btcl'].diff()\n",
+        "del btc['btc']\n",
+        "del btc['btcl']\n",
+        "del btc['High']\n",
+        "del btc['Low']\n",
+        "del btc['Open']\n",
+        "del btc['Volume']\n",
+        "del btc['Adj Close']\n",
+        "btc.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>btcg</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>Date</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2014-09-17</th>\n",
+              "      <td>-0.074643</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2014-09-18</th>\n",
+              "      <td>-0.072402</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2014-09-19</th>\n",
+              "      <td>0.035111</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2014-09-20</th>\n",
+              "      <td>-0.024968</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2014-09-21</th>\n",
+              "      <td>0.008317</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-28</th>\n",
+              "      <td>0.031655</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>0.020015</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>0.000019</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>0.002999</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>0.004870</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>2385 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                btcg\n",
+              "Date                \n",
+              "2014-09-17 -0.074643\n",
+              "2014-09-18 -0.072402\n",
+              "2014-09-19  0.035111\n",
+              "2014-09-20 -0.024968\n",
+              "2014-09-21  0.008317\n",
+              "...              ...\n",
+              "2021-03-28  0.031655\n",
+              "2021-03-29  0.020015\n",
+              "2021-03-30  0.000019\n",
+              "2021-03-31  0.002999\n",
+              "2021-04-01  0.004870\n",
+              "\n",
+              "[2385 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 18
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "sCjmndRI8MYK",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 450
+        },
+        "outputId": "bd019fbd-e7cb-41d0-828b-868da6311b1a"
+      },
+      "source": [
+        "eth.rename({'Close': 'eth'}, axis=1, inplace=True)\n",
+        "eth['ethl'] = np.log(eth['eth'])\n",
+        "eth['ethg'] = eth['ethl'].diff()\n",
+        "del eth['eth']\n",
+        "del eth['ethl']\n",
+        "del eth['High']\n",
+        "del eth['Low']\n",
+        "del eth['Open']\n",
+        "del eth['Volume']\n",
+        "del eth['Adj Close']\n",
+        "eth.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>ethg</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>Date</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2015-08-07</th>\n",
+              "      <td>-1.302871</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2015-08-08</th>\n",
+              "      <td>-0.070710</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2015-08-09</th>\n",
+              "      <td>0.009290</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2015-08-10</th>\n",
+              "      <td>0.410335</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2015-08-11</th>\n",
+              "      <td>0.131094</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-28</th>\n",
+              "      <td>0.073133</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>0.014376</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>0.038432</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>0.030249</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>0.080591</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>2061 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                ethg\n",
+              "Date                \n",
+              "2015-08-07 -1.302871\n",
+              "2015-08-08 -0.070710\n",
+              "2015-08-09  0.009290\n",
+              "2015-08-10  0.410335\n",
+              "2015-08-11  0.131094\n",
+              "...              ...\n",
+              "2021-03-28  0.073133\n",
+              "2021-03-29  0.014376\n",
+              "2021-03-30  0.038432\n",
+              "2021-03-31  0.030249\n",
+              "2021-04-01  0.080591\n",
+              "\n",
+              "[2061 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 19
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "bEdsrhNkR2u-",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 562
+        },
+        "outputId": "cc6d646d-fbfd-4ba0-a530-6c17a8f5634b"
+      },
+      "source": [
+        "tip.rename({'Close': 'tip'}, axis=1, inplace=True)\n",
+        "tip['tipl'] = np.log(tip['tip'])\n",
+        "tip['tipg'] = tip['tipl'].diff()\n",
+        "del tip['tip']\n",
+        "del tip['tipl']\n",
+        "del tip['High']\n",
+        "del tip['Low']\n",
+        "del tip['Open']\n",
+        "del tip['Volume']\n",
+        "del tip['Adj Close']\n",
+        "tip.dropna(axis=0)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "KeyError",
+          "evalue": "ignored",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mKeyError\u001b[0m                                  Traceback (most recent call last)",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/pandas/core/indexes/base.py\u001b[0m in \u001b[0;36mget_loc\u001b[0;34m(self, key, method, tolerance)\u001b[0m\n\u001b[1;32m   2897\u001b[0m             \u001b[0;32mtry\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 2898\u001b[0;31m                 \u001b[0;32mreturn\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_engine\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mget_loc\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mcasted_key\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   2899\u001b[0m             \u001b[0;32mexcept\u001b[0m \u001b[0mKeyError\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0merr\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32mpandas/_libs/index.pyx\u001b[0m in \u001b[0;36mpandas._libs.index.IndexEngine.get_loc\u001b[0;34m()\u001b[0m\n",
+            "\u001b[0;32mpandas/_libs/index.pyx\u001b[0m in \u001b[0;36mpandas._libs.index.IndexEngine.get_loc\u001b[0;34m()\u001b[0m\n",
+            "\u001b[0;32mpandas/_libs/hashtable_class_helper.pxi\u001b[0m in \u001b[0;36mpandas._libs.hashtable.PyObjectHashTable.get_item\u001b[0;34m()\u001b[0m\n",
+            "\u001b[0;32mpandas/_libs/hashtable_class_helper.pxi\u001b[0m in \u001b[0;36mpandas._libs.hashtable.PyObjectHashTable.get_item\u001b[0;34m()\u001b[0m\n",
+            "\u001b[0;31mKeyError\u001b[0m: 'tip'",
+            "\nThe above exception was the direct cause of the following exception:\n",
+            "\u001b[0;31mKeyError\u001b[0m                                  Traceback (most recent call last)",
+            "\u001b[0;32m<ipython-input-21-d31df6b0941f>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      1\u001b[0m \u001b[0mtip\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mrename\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m{\u001b[0m\u001b[0;34m'Close'\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0;34m'tip'\u001b[0m\u001b[0;34m}\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0maxis\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;36m1\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0minplace\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;32mTrue\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 2\u001b[0;31m \u001b[0mtip\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m'tipl'\u001b[0m\u001b[0;34m]\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mnp\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mlog\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mtip\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m'tip'\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      3\u001b[0m \u001b[0mtip\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m'tipg'\u001b[0m\u001b[0;34m]\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mtip\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m'tipl'\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mdiff\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      4\u001b[0m \u001b[0;32mdel\u001b[0m \u001b[0mtip\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m'tip'\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      5\u001b[0m \u001b[0;32mdel\u001b[0m \u001b[0mtip\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m'tipl'\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/pandas/core/frame.py\u001b[0m in \u001b[0;36m__getitem__\u001b[0;34m(self, key)\u001b[0m\n\u001b[1;32m   2904\u001b[0m             \u001b[0;32mif\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mcolumns\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mnlevels\u001b[0m \u001b[0;34m>\u001b[0m \u001b[0;36m1\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   2905\u001b[0m                 \u001b[0;32mreturn\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_getitem_multilevel\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mkey\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 2906\u001b[0;31m             \u001b[0mindexer\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mcolumns\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mget_loc\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mkey\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   2907\u001b[0m             \u001b[0;32mif\u001b[0m \u001b[0mis_integer\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mindexer\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   2908\u001b[0m                 \u001b[0mindexer\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0;34m[\u001b[0m\u001b[0mindexer\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/pandas/core/indexes/base.py\u001b[0m in \u001b[0;36mget_loc\u001b[0;34m(self, key, method, tolerance)\u001b[0m\n\u001b[1;32m   2898\u001b[0m                 \u001b[0;32mreturn\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_engine\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mget_loc\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mcasted_key\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   2899\u001b[0m             \u001b[0;32mexcept\u001b[0m \u001b[0mKeyError\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0merr\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 2900\u001b[0;31m                 \u001b[0;32mraise\u001b[0m \u001b[0mKeyError\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mkey\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;32mfrom\u001b[0m \u001b[0merr\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   2901\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   2902\u001b[0m         \u001b[0;32mif\u001b[0m \u001b[0mtolerance\u001b[0m \u001b[0;32mis\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mKeyError\u001b[0m: 'tip'"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "tt1lr8AEjb8R",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 450
+        },
+        "outputId": "7cd95adb-ec30-4809-f869-46f3e3d0faa8"
+      },
+      "source": [
+        "tip"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>tipg</th>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>Date</th>\n",
+              "      <th></th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>2009-07-01</th>\n",
+              "      <td>NaN</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-02</th>\n",
+              "      <td>-0.002477</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-06</th>\n",
+              "      <td>-0.002384</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-07</th>\n",
+              "      <td>0.001590</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2009-07-08</th>\n",
+              "      <td>0.003568</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-26</th>\n",
+              "      <td>0.000238</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-29</th>\n",
+              "      <td>-0.002701</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-30</th>\n",
+              "      <td>-0.001752</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-03-31</th>\n",
+              "      <td>0.000239</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2021-04-01</th>\n",
+              "      <td>0.000478</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>2959 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                tipg\n",
+              "Date                \n",
+              "2009-07-01       NaN\n",
+              "2009-07-02 -0.002477\n",
+              "2009-07-06 -0.002384\n",
+              "2009-07-07  0.001590\n",
+              "2009-07-08  0.003568\n",
+              "...              ...\n",
+              "2021-03-26  0.000238\n",
+              "2021-03-29 -0.002701\n",
+              "2021-03-30 -0.001752\n",
+              "2021-03-31  0.000239\n",
+              "2021-04-01  0.000478\n",
+              "\n",
+              "[2959 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 22
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 17
+        },
+        "id": "HF2RDKq71j2I",
+        "outputId": "e95aa0e6-f621-4dc3-c955-004b015648fb"
+      },
+      "source": [
+        "from google.colab import files\n",
+        "# SAS를 위한 데이터\n",
+        "snp.to_csv('snp.csv')\n",
+        "files.download('snp.csv')\n",
+        "vt.to_csv('vt.csv')\n",
+        "files.download('vt.csv')\n",
+        "gold.to_csv('gold.csv')\n",
+        "files.download('gold.csv')\n",
+        "mo3.to_csv('mo3.csv')\n",
+        "files.download('mo3.csv')\n",
+        "yr3.to_csv('yr3.csv')\n",
+        "files.download('yr3.csv')\n",
+        "yr10.to_csv('yr10.csv')\n",
+        "files.download('yr10.csv')\n",
+        "aaa.to_csv('aaa.csv')\n",
+        "files.download('aaa.csv')\n",
+        "dollar.to_csv('dollar.csv')\n",
+        "files.download('dollar.csv')\n",
+        "yen.to_csv('yen.csv')\n",
+        "files.download('yen.csv')\n",
+        "chf.to_csv('chf.csv')\n",
+        "files.download('chf.csv')\n",
+        "rmb.to_csv('rmb.csv')\n",
+        "files.download('rmb.csv')\n",
+        "eur.to_csv('eur.csv')\n",
+        "files.download('eur.csv')\n",
+        "reits.to_csv('reits.csv')\n",
+        "files.download('reits.csv')\n",
+        "btc.to_csv('btc.csv')\n",
+        "files.download('btc.csv')\n",
+        "eth.to_csv('eth.csv')\n",
+        "files.download('eth.csv')\n",
+        "tip.to_csv('tip.csv')\n",
+        "files.download('tip.csv')"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "download(\"download_8360b615-fac8-42cb-b1dc-bb7acd1bb7be\", \"vt.csv\", 104280)"
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "download(\"download_ec090389-a5ae-479a-9678-c11d1cddc990\", \"gold.csv\", 124353)"
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "download(\"download_cc9699d8-7d67-442b-92d2-5d6836423e7a\", \"mo3.csv\", 99414)"
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "download(\"download_7ee38d56-396b-487c-8a43-19460018d20f\", \"yr3.csv\", 112617)"
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "download(\"download_29595fc8-7cdf-45bd-8a5b-86638dc73bc0\", \"yr10.csv\", 116504)"
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "download(\"download_67957e7a-7847-467f-a9c7-be9a76b211d9\", \"aaa.csv\", 119292)"
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "download(\"download_ecf1cd7b-dc9e-42aa-b3c0-d3f73a11ee48\", \"dollar.csv\", 125718)"
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "download(\"download_6263f3f3-921c-4ac6-9ce7-5a63d8de43e5\", \"yen.csv\", 123919)"
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "download(\"download_815ab624-7866-4b59-8a5a-afd296706ba3\", \"rmb.csv\", 122471)"
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "download(\"download_a1f27d9d-e4db-4808-a840-fdcae67deb56\", \"eur.csv\", 123852)"
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "download(\"download_ec5ce5c5-7c54-4da7-94cc-062734dc34c0\", \"reits.csv\", 124397)"
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "download(\"download_3299748c-678e-4950-b90c-8bfa967f14dc\", \"btc.csv\", 76769)"
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "download(\"download_48abf6a4-83dd-42ac-a740-6074199517e7\", \"eth.csv\", 66065)"
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "download(\"download_e86c9bce-6517-48ce-9ab7-fcef1d22f519\", \"tip.csv\", 125971)"
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 17
+        },
+        "id": "rLknuU-YvdpJ",
+        "outputId": "46ea69c2-06b8-45e1-bcab-7488008dbaac"
+      },
+      "source": [
+        "# EXCEL을 위한 데이터\n",
+        "df = pd.concat([snp,vt,gold,mo3,yr3,yr10,aaa,dollar,yen,chf,rmb,eur,reits,btc,eth,tip],axis=1)\n",
+        "df\n",
+        "from google.colab import files\n",
+        "df.to_csv('df.csv')\n",
+        "files.download('df.csv')"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "application/javascript": [
+              "download(\"download_a258e501-01c4-4f2a-91c1-d306cb47fbe1\", \"df.csv\", 33226)"
+            ],
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          }
+        }
+      ]
+    }
+  ]
+}
