@@ -1,0 +1,39 @@
+{
+"permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "Agent(*)"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "async": true,
+            "command": "ROOT=$(git rev-parse --show-toplevel 2>/dev/null); if [ -f \"$ROOT/.env\" ]; then set -a; source \"$ROOT/.env\"; set +a; fi; AGENTS=$(curl -s \"http://127.0.0.1:3100/api/companies/${SR_COMPANY_ID}/issues?status=todo,in_progress,blocked\" -H 'Authorization: Bearer local-board' 2>/dev/null | python3 -c \"import sys,json; issues=json.load(sys.stdin); print(' '.join({i['assigneeAgentId'] for i in issues if i.get('assigneeAgentId')}))\" 2>/dev/null); for id in $AGENTS; do npx --yes paperclipai heartbeat run --agent-id \"$id\" --source assignment >/dev/null 2>&1 & done"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/workspace/templates/scripts/validate-encoding.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
